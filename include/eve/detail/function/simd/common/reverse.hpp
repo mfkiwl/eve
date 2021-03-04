@@ -1,0 +1,51 @@
+//==================================================================================================
+/**
+  EVE - Expressive Vector Engine
+  Copyright : EVE Contributors & Maintainers
+  SPDX-License-Identifier: MIT
+**/
+//==================================================================================================
+#pragma once
+
+#include <eve/detail/abi.hpp>
+#include <eve/function/bit_cast.hpp>
+
+namespace eve::detail
+{
+  template<simd_value Wide>
+  EVE_FORCEINLINE Wide reverse_(EVE_SUPPORTS(cpu_), Wide const& v)
+  {
+    if constexpr ( has_aggregated_abi_v<Wide> ) {
+      auto [l, h] = v.slice();
+      l = eve::reverse(l);
+      h = eve::reverse(h);
+      return Wide{h, l};
+    }
+    else
+    {
+      Wide res {
+        [&](int i, int size) {
+          return v.get(size - i - 1);
+        }
+      };
+      return res;
+    }
+  }
+
+  template<simd_value Wide>
+  EVE_FORCEINLINE logical<Wide> reverse_(EVE_SUPPORTS(cpu_), logical<Wide> const& v)
+  {
+    using abi_t = typename Wide::abi_type;
+    if constexpr ( !abi_t::is_wide_logical )
+    {
+      // Reconstruct mask, reverse then turn to mask again
+      auto const m = v.mask();
+      auto const res = eve::reverse(m);
+      return to_logical(res);
+    }
+    else
+    {
+      return bit_cast( reverse(v.bits()), as(v));
+    }
+  }
+}
