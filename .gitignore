@@ -40,3 +40,4 @@
 *build*/
 Testing/*
 *.vscode/*
+doc/docs/*
